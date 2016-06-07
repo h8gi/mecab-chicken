@@ -1,0 +1,11 @@
+;;; mecab.setup
+
+;;; コンパイル
+(compile -s -O3 -d1 "mecab.scm" -j mecab)
+(compile -s -O3 -d0 "mecab.import.scm")
+
+;;; インストール
+(install-extension
+ 'mecab
+ '("mecab.so" "mecab.import.so")
+ '((version 1.0)))

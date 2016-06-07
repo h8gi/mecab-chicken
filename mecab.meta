@@ -1,0 +1,5 @@
+;;; mecab.meta
+((author "yagihiroki")
+ (synopsis "mecab")
+ (license "MIT license http://opensource.org/licenses/mit-license.php")
+ (files "main.scm" "mecab.scm" "mecab.setup" "mecab.meta"))
