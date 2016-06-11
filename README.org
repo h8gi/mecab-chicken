@@ -1,5 +1,7 @@
 * mecab
 
+MeCab wrapper for chicken scheme.
+
 ** example
 
 #+BEGIN_SRC scheme
