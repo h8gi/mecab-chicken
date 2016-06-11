@@ -5,7 +5,7 @@
 #+BEGIN_SRC scheme
   (use mecab)
   (let* ([mecab (mecab-new)]
-         [input "体が痛くて上手く動けない。"])
+         [input "腹が減って上手く動けない。"])
     (printf "INPUT: ~A~%" input)
     (printf "OUTPUT: ~%~A~%" (mecab-sparse->string mecab input))
     (mecab-check mecab))
