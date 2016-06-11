@@ -1,0 +1,20 @@
+* mecab
+
+** example
+
+#+BEGIN_SRC scheme
+  (use mecab)
+  (let* ([mecab (mecab-new)]
+         [input "体が痛くて上手く動けない。"])
+    (printf "INPUT: ~A~%" input)
+    (printf "OUTPUT: ~%~A~%" (mecab-sparse->string mecab input))
+    (mecab-check mecab))
+
+  (let* ([mecab (mecab-new)]
+         [input "ご飯を食べたら体調が良くなった。"]
+         [node (mecab-sparse->node mecab input)])
+    (printf "INPUT: ~A~%" input)
+    (pp (node->list node))
+    (mecab-check mecab))
+
+#+END_SRC

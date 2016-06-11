@@ -1,5 +1,5 @@
 ;;; main.scm    source of mecab.scm
-(use lolevel foreigners extras)
+(use lolevel foreigners extras srfi-13)
 (foreign-declare "#include \"mecab.h\"")
 (foreign-declare "#include <stdio.h>")
 (define-record mecab ptr)
@@ -25,7 +25,7 @@
   [mecab-node*	bnext	node-bnext]
   [mecab-path*	rpath	node-rpath]
   [mecab-path*  lpath	node-lpath]
-  [c-string	surface node-surface]
+  [c-string	surface _node-surface]
   [c-string	feature	node-feature]
   [unsigned-int	id  node-id]
   [unsigned-short	length node-length]
@@ -42,7 +42,8 @@
   [short	wcost	node-wcost]
   [long		cost	node-cost])
 
-
+(define (node-surface node)
+  (string-take (_node-surface node) (node-length node)))
 (define-foreign-enum-type (node-type int)
   (node-type->int int->node-type)
   [mecab-nor-node MECAB_NOR_NODE 0]
@@ -91,22 +92,11 @@
   (if (or (= (node-stat node) mecab-nor-node)
 	  (= (node-stat node) mecab-unk-node)
 	  (= (node-stat node) mecab-bos-node))
-      (cons (node-feature node)
+      (cons (cons (node-surface node) (node-feature node))
 	    (node->list (node-next node)))
       (node-feature node)))
 
-;; (let* ([mecab (mecab-new)]
-;;        [input "太郎は次郎が持っている本を花子に渡した。"])
-;;   (printf "INPUT: ~A~%" input)
-;;   (printf "OUTPUT: ~%~A~%" (mecab-sparse->string mecab input))
-;;   (mecab-check mecab))
 
-;; (let* ([mecab (mecab-new)]
-;;        [input "太郎は次郎が持っている本を花子に渡した。"]
-;;        [node (mecab-sparse->node mecab input)])
-;;   (printf "INPUT: ~A~%" input)
-;;   (pp (node->list node))
-;;   (mecab-check mecab))
 
 
 
