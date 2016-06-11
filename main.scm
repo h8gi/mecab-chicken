@@ -94,7 +94,7 @@
 	  (= (node-stat node) mecab-bos-node))
       (cons (cons (node-surface node) (node-feature node))
 	    (node->list (node-next node)))
-      (node-feature node)))
+      (cons (node-surface node) (node-feature node))))
 
 
 
