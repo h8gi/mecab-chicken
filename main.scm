@@ -3,7 +3,6 @@
 (foreign-declare "#include \"mecab.h\"")
 (foreign-declare "#include <stdio.h>")
 (define-record mecab ptr)
-(define-record mecab-node ptr next)
 (define-foreign-type *mecab c-pointer)
 (define-foreign-type *mecab-node c-pointer)
 
@@ -39,7 +38,10 @@
    (mecab-ptr mcb) str))
 
 
-
+;; (define (mecab-sparse->node mcb str)
+;;   (mecab-check mcb)
+;;   ((foreign-lambda *mecab-node mecab_sparse_tonode *mecab (const c-string))
+;;       (mecab-ptr mcb) str))
 
 (let* ([mecab (mecab-new)]
        [input (foreign-value "\"太郎は次郎が持っている本を花子に渡した。\"" (const c-string))])
