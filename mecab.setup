@@ -1,7 +1,9 @@
 ;;; mecab.setup
 
 ;;; コンパイル
-(compile -s -O3 -d1 "mecab.scm" -j mecab)
+(compile -s -O3 -d1 "mecab.scm" -j mecab
+	-L "\"`mecab-config --libs`\""
+	-C "\"`mecab-config --cflags`\"")
 (compile -s -O3 -d0 "mecab.import.scm")
 
 ;;; インストール
