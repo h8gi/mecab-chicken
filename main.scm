@@ -9,7 +9,18 @@
 
 (define-foreign-type mecab-path* c-pointer)
 (define-foreign-type mecab-node* c-pointer)
+(define-foreign-type mecab-dinfo* c-pointer)
+(define-foreign-record-type (mecab-dinfo mecab_dictionary_info_t)
+  [c-string	filename	dinfo-filename]
+  [c-string	charset		dinfo-charset]
+  [unsigned-int	size		dinfo-size]
+  [int		type		dinfo-type]
+  [unsigned-int	lsize		dinfo-lsize]
+  [unsigned-int	rsize		dinfo-rsize]
+  [unsigned-short	version	dinfo-version]
+  [mecab-dinfo*	next		dinfo-next])
 
+;;; mecab_path_t
 (define-foreign-record-type (mecab-path mecab_path_t)
   [mecab-node* rnode path-rnode]
   [mecab-path* rnext path-rnext]
@@ -17,7 +28,7 @@
   [mecab-path* lnext path-lnext]
   [int	       cost  path-cost]
   [float       prob  path-prob])
-
+;;; mecab_node_t
 (define-foreign-record-type (mecab-node mecab_node_t)
   [mecab-node*	prev	node-prev]
   [mecab-node*	next	node-next]
@@ -53,9 +64,9 @@
   [mecab-eos-node MECAB_EOS_NODE 3]
   [mecab-eon-node MECAB_EON_NODE 4])
 
-(define (mecab-new)
+(define (mecab-new #!optional (args ""))
   (let* ([mcb ((foreign-lambda mecab* mecab_new2 c-string)
-	       (foreign-value "\"\"" c-string))])
+	       args)])
     (mecab-check mcb)
     (set-finalizer! mcb gc-collect-mecab)))
 
@@ -77,6 +88,12 @@
   (unless (and (mecab-success? mcb) value)
     (mecab-error mcb 'check)))
 
+;;; dictionary ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; (define (mecab-dictionary-info mcb)
+;;   ())
+
+
+;;; parse ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (mecab-sparse->string mcb str)
   (mecab-check mcb)
   ((foreign-lambda c-string mecab_sparse_tostr mecab* (const c-string))
@@ -96,3 +113,10 @@
 	    (node->list (node-next node)))
       (cons (node-surface node) (node-feature node))))
 
+(let* ([mecab (mecab-new "-Oshfoads")]
+       [input "ご飯を食べたら体調が良くなった。"]
+       [node (mecab-sparse->node mecab input)])
+  (printf "INPUT: ~A~%" input)
+  (display (mecab-sparse->string mecab input))
+  (pp (node->list node))
+  (mecab-check mecab))
