@@ -44,8 +44,9 @@
 
 (define (node-surface node)
   (string-take (_node-surface node) (node-length node)))
-(define-foreign-enum-type (node-type int)
-  (node-type->int int->node-type)
+
+(define-foreign-enum-type (node-stat int)
+  (node-stat->int int->node-stat)
   [mecab-nor-node MECAB_NOR_NODE 0]
   [mecab-unk-node MECAB_UNK_NODE 1]
   [mecab-bos-node MECAB_BOS_NODE 2]
@@ -64,7 +65,6 @@
     (mecab-ptr-set! mcb #f)))
 
 (define (mecab-error mcb #!optional loc)
-  (gc-collect-mecab mcb)
   (error loc "Mecab error"
 	 ((foreign-lambda c-string mecab_strerror mecab*) mcb)))
 
@@ -95,8 +95,4 @@
       (cons (cons (node-surface node) (node-feature node))
 	    (node->list (node-next node)))
       (cons (node-surface node) (node-feature node))))
-
-
-
-
 
