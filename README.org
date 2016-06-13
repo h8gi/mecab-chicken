@@ -2,6 +2,25 @@
 
 MeCab wrapper for chicken scheme.
 
+** install
+
+#+BEGIN_SRC shell
+git clone https://github.com/h8gi/mecab-chicken
+cd mecab-chicken
+chicken-install -s
+csi
+(use mecab)
+#+END_SRC
+
+** usage
+   
+=[procedure] (mecab-new #!optional (args "")) => mecab=
+
+=[procedure] (mecab-parse mecab str #!optional (type 'node)) => result=
+type = 'node | 'string
+
+=[procedure] (mecab-nbest-init mecab str)=
+
 ** example
 
 #+BEGIN_SRC scheme

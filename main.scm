@@ -1,5 +1,5 @@
 ;;; main.scm    source of mecab.scm
-(use lolevel foreigners extras srfi-13)
+(use lolevel foreigners)
 (foreign-declare "#include \"mecab.h\"")
 (foreign-declare "#include <stdio.h>")
 (define-record mecab ptr)
@@ -10,6 +10,8 @@
 (define-foreign-type mecab-path* c-pointer)
 (define-foreign-type mecab-node* c-pointer)
 (define-foreign-type mecab-dinfo* c-pointer)
+
+;;; mecab_dictionary_info_t
 (define-foreign-record-type (mecab-dinfo mecab_dictionary_info_t)
   [c-string	filename	dinfo-filename]
   [c-string	charset		dinfo-charset]
@@ -67,74 +69,81 @@
 (define (mecab-new #!optional (args ""))
   (let* ([mecab ((foreign-lambda mecab* mecab_new2 c-string)
 	       args)])
-    (mecab-check mecab)
+    (mecab-check mecab #t #:loc 'mecab-new)
     (set-finalizer! mecab gc-collect-mecab)))
 
 (define (gc-collect-mecab mecab)
-  (when (mecab-ptr mecab)
-    ((foreign-lambda void mecab_destroy mecab*) mecab)
-    (mecab-ptr-set! mecab #f)))
+  ((foreign-lambda void mecab_destroy mecab*) mecab))
 
-(define (mecab-error mecab #!optional loc)
-  (error loc "Mecab error"
-	 ((foreign-lambda c-string mecab_strerror mecab*) mecab)))
+;; (define (gc-collect-mecab mecab)
+;;   (when (mecab-ptr mecab)
+;;     ((foreign-lambda void mecab_destroy mecab*) mecab)
+;;     (mecab-ptr-set! mecab #f)))
+
+(define (mecab-error mecab loc message)
+  (error loc "MECAB ERROR" message))
 
 (define (mecab-success? mecab)
   ((foreign-lambda* bool ([mecab* mecab])
 		    "return (! ! mecab);")
    mecab))
 
-(define (mecab-check mecab #!optional (value #t))
-  (unless (and (mecab-success? mecab) value)
-    (mecab-error mecab 'check)))
+(define (mecab-check mecab value #!key
+		     (message "")
+		     (loc #f))
+  (if (and (mecab-success? mecab) value)
+      value
+      (mecab-error mecab loc message)))
 
 ;;; dictionary ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; (define (mecab-dictionary-info mecab)
-;;   ())
 
 
 ;;; parse ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (mecab-sparse->string mecab str)
   (let ([result ((foreign-lambda c-string mecab_sparse_tostr mecab* (const c-string))
 		 mecab str)])
-    result))
+    (mecab-check mecab result
+		 #:loc 'mecab-sparse->string)))
 
 
 (define (mecab-sparse->node mecab str)
   (let ([result ((foreign-lambda mecab-node* mecab_sparse_tonode mecab* (const c-string))
 		 mecab str)])
-    result))
+    (mecab-check mecab result
+		 #:loc 'mecab-sparse->node)))
 
-(define (mecab-nbest-init mecab str)
+(define (mecab-parse mecab str #!optional (type 'node))
+  (case type
+    [(node) (mecab-sparse->node mecab str)]
+    [else (mecab-sparse->string mecab str)]))
+
+(define (mecab-nbest-init! mecab str)
   (let ([result ((foreign-lambda bool mecab_nbest_init mecab* (const c-string))
 		 mecab str)])
-    (assert result "failed parse nbest init")))
+    (mecab-check mecab result
+		 #:loc 'mecab-nbest-init)))
 
 (define (mecab-nbest-next->node mecab)
   (let ([result ((foreign-lambda mecab-node* mecab_nbest_next_tonode mecab*)
 		 mecab)])
-    result))
-
+    (mecab-check mecab result
+		 #:loc 'mecab-nbest-next->node)))
+;;; buggy…
 (define (mecab-nbest-next->string mecab)
-  (let ([result ((foreign-lambda (const c-string) mecab_nbest_next_tostr mecab*)
+  (let ([result ((foreign-lambda c-string mecab_nbest_next_tostr mecab*)
 		 mecab)])
-    result))
+    (mecab-check mecab result
+		 #:loc 'mecab-nbest-next->string)))
+
+(define (mecab-nbest-next! mecab #!optional (type 'node))
+  (case type
+    [(node) (mecab-nbest-next->node mecab)]
+    [else (mecab-nbest-next->string mecab)]))
 
 (define (node->list node)
-  (if (or (= (node-stat node) mecab-nor-node)
-	  (= (node-stat node) mecab-unk-node)
-	  (= (node-stat node) mecab-bos-node))
-      (cons (cons (node-surface node) (node-feature node))
-	    (node->list (node-next node)))
-      (cons (node-surface node) (node-feature node))))
+  (define (inner node acc)
+    (if node
+	(inner (node-next node) (cons node acc))
+	(reverse! acc)))
+  (inner node '()))
 
-(let* ([mecab (mecab-new)]
-       [input "ご飯を食べたら体調が良くなった。"]
-       [node (mecab-sparse->node mecab input)])
-  (printf "INPUT: ~A~%" input)
-  (display (mecab-sparse->string mecab input))
-  (pp (node->list node))
-  (mecab-check mecab)
-  (mecab-nbest-init mecab "ここには何もないし、私はご飯をあなたと食べなかったりする。")
-  (pp (node->list (mecab-nbest-next->node mecab)))
-  (pp (node->list (mecab-nbest-next->node mecab))))
