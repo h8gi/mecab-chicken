@@ -38,8 +38,8 @@
   [mecab-node*	bnext	node-bnext]
   [mecab-path*	rpath	node-rpath]
   [mecab-path*  lpath	node-lpath]
-  [c-string	surface _node-surface]
-  [c-string	feature	node-feature]
+  [(const c-string)	surface _node-surface]
+  [(const c-string)	feature	node-feature]
   [unsigned-int	id  node-id]
   [unsigned-short	length node-length]
   [unsigned-short	rlength node-rlength]
@@ -70,7 +70,6 @@
   (let ([mecab ((foreign-lambda mecab* mecab_new2 (const c-string))
 		args)])
     (mecab-check mecab #t #:loc 'mecab-new)
-    (printf "new: ~A~%" (mecab-ptr mecab))
     (set-finalizer! mecab gc-collect-mecab)))
 
 ;; (define (gc-collect-mecab mecab)
@@ -79,7 +78,6 @@
 
 (define (gc-collect-mecab mecab)
   (when (mecab-ptr mecab)
-    (printf "gc: ~A~%" (mecab-ptr mecab))
     ((foreign-lambda void mecab_destroy mecab*) mecab)
     (mecab-ptr-set! mecab #f)))
 
@@ -120,18 +118,17 @@
     [(node) (mecab-sparse->node mecab str)]
     [else (mecab-sparse->string mecab str)]))
 
+;;; buggy…
 (define (mecab-nbest-init! mecab str)
   (let ([result ((foreign-lambda bool mecab_nbest_init mecab* (const c-string))
 		 mecab str)])
     (mecab-check mecab result
 		 #:loc 'mecab-nbest-init)))
-
 (define (mecab-nbest-next->node mecab)
   (let ([result ((foreign-lambda mecab-node* mecab_nbest_next_tonode mecab*)
 		 mecab)])
     (mecab-check mecab result
 		 #:loc 'mecab-nbest-next->node)))
-;;; buggy…
 (define (mecab-nbest-next->string mecab)
   (let ([result ((foreign-lambda c-string mecab_nbest_next_tostr mecab*)
 		 mecab)])
@@ -149,5 +146,3 @@
 	(inner (node-next node) (cons node acc))
 	(reverse! acc)))
   (inner node '()))
-
-
