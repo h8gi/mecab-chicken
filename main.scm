@@ -67,25 +67,28 @@
   [mecab-eon-node MECAB_EON_NODE 4])
 
 (define (mecab-new #!optional (args ""))
-  (let* ([mecab ((foreign-lambda mecab* mecab_new2 c-string)
-	       args)])
+  (let ([mecab ((foreign-lambda mecab* mecab_new2 (const c-string))
+		args)])
     (mecab-check mecab #t #:loc 'mecab-new)
+    (printf "new: ~A~%" (mecab-ptr mecab))
     (set-finalizer! mecab gc-collect-mecab)))
 
-(define (gc-collect-mecab mecab)
-  ((foreign-lambda void mecab_destroy mecab*) mecab))
-
 ;; (define (gc-collect-mecab mecab)
-;;   (when (mecab-ptr mecab)
-;;     ((foreign-lambda void mecab_destroy mecab*) mecab)
-;;     (mecab-ptr-set! mecab #f)))
+;;   (printf "gc: ~A~%" (mecab-ptr mecab))
+;;   ((foreign-lambda void mecab_destroy mecab*) mecab))
+
+(define (gc-collect-mecab mecab)
+  (when (mecab-ptr mecab)
+    (printf "gc: ~A~%" (mecab-ptr mecab))
+    ((foreign-lambda void mecab_destroy mecab*) mecab)
+    (mecab-ptr-set! mecab #f)))
 
 (define (mecab-error mecab loc message)
   (error loc "MECAB ERROR" message))
 
 (define (mecab-success? mecab)
   ((foreign-lambda* bool ([mecab* mecab])
-		    "return (! ! mecab);")
+		    "C_return(! ! mecab);")
    mecab))
 
 (define (mecab-check mecab value #!key
@@ -146,4 +149,5 @@
 	(inner (node-next node) (cons node acc))
 	(reverse! acc)))
   (inner node '()))
+
 
